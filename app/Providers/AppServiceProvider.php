@@ -3,22 +3,20 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Services\PurifyService;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
+    public function register()
     {
-        //
+        $this->app->singleton(PurifyService::class, function ($app) {
+            return new PurifyService();
+        });
     }
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
+    public function boot()
     {
         //
     }
 }
+

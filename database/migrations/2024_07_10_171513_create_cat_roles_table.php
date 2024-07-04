@@ -4,19 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateBudgetsTable extends Migration
+return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up()
     {
-        Schema::create('budgets', function (Blueprint $table) {
+        Schema::create('cat_roles', function (Blueprint $table) {
             $table->id();
-            $table->decimal('monthly_budget', 10, 2);
+            $table->string('name');
             $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('budgets');
+        Schema::dropIfExists('cat_roles');
     }
-}
+};

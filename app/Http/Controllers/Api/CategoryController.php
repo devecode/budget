@@ -5,11 +5,27 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Services\PurifyService;
 
 class CategoryController extends Controller
 {
+    protected $purifyService;
+
+    public function __construct(PurifyService $purifyService)
+    {
+        $this->purifyService = $purifyService;
+    }
+
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/categories",
+     *     summary="List all categories",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="A list of categories"
+     *     )
+     * )
      */
     public function index()
     {
@@ -18,45 +34,127 @@ class CategoryController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *     path="/api/categories",
+     *     summary="Store a new category",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="limit_spending", type="number", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Category created successfully"
+     *     )
+     * )
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        $validatedData = $request->validate($this->validationRules());
 
-        $category = Category::create($validated);
+        $validatedData['name'] = $this->purifyService->purify($validatedData['name']);
+
+        $category = Category::create($validatedData);
+
         return response()->json($category, 201);
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/categories/{id}",
+     *     summary="Show a specific category",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Category details"
+     *     )
+     * )
      */
-    public function show(Category $category)
+    public function show($id)
     {
+        $category = Category::findOrFail($id);
         return response()->json($category);
     }
 
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     *     path="/api/categories/{id}",
+     *     summary="Update a specific category",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="limit_spending", type="number", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Category updated successfully"
+     *     )
+     * )
      */
-    public function update(Request $request, Category $category)
+    public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        $category = Category::findOrFail($id);
 
-        $category->update($validated);
+        $validatedData = $request->validate($this->validationRules());
+
+        $validatedData['name'] = $this->purifyService->purify($validatedData['name']);
+
+        $category->update($validatedData);
+
         return response()->json($category);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     *     path="/api/categories/{id}",
+     *     summary="Delete a specific category",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Category deleted successfully"
+     *     )
+     * )
      */
-    public function destroy(Category $category)
+    public function destroy($id)
     {
+        $category = Category::findOrFail($id);
         $category->delete();
-        return response()->json(null, 204);
+
+        return response()->json(['message' => 'Category deleted successfully']);
+    }
+
+    // Método privado para obtener las reglas de validación
+    private function validationRules()
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'limit_spending' => 'nullable|numeric',
+        ];
     }
 }
